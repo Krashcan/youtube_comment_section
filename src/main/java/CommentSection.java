@@ -8,10 +8,15 @@ public class CommentSection implements Commentable {
     private List<Comment> comments;
 
     public enum SortField {
-        NONE, UPVOTES, NEWEST_FIRST
+        NONE, UPVOTES, NEWEST
     }
 
     private static Map<SortField, Comparator<Comment>> sortingMap;
+
+    CommentSection() {
+        comments = new ArrayList<>();
+        initializeSortingMap();
+    }
 
     @Override
     public void addComment(@NotNull Comment comment) {
@@ -37,7 +42,7 @@ public class CommentSection implements Commentable {
         sortingMap = new HashMap<>();
         sortingMap.put(SortField.UPVOTES,
                 Comparator.comparing(Comment::getTotalUpvotes).reversed());
-        sortingMap.put(SortField.NEWEST_FIRST,
+        sortingMap.put(SortField.NEWEST,
                 Comparator.comparing(Comment::getCreatedOn).reversed());
     }
 }

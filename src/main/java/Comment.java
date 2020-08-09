@@ -12,9 +12,9 @@ public abstract class Comment implements Votable, Commentable, Reportable, TimeM
 
     private Map<String, VoteType> userVoteMap;
 
-    private Integer downvotes;
+    private Integer downvotes = 0;
 
-    private Integer upvotes;
+    private Integer upvotes = 0;
 
     private List<Comment> replies;
 
@@ -35,48 +35,48 @@ public abstract class Comment implements Votable, Commentable, Reportable, TimeM
         this.userVoteMap = new HashMap<>();
         this.replies = new ArrayList<>();
         this.reportedBy = new HashSet<>();
-        this.deleted = false;
+        this.hidden = this.deleted = false;
         this.createdOn = this.updatedOn = new Date().getTime();
     }
 
     @Override
     public void addUpvote(String userId) {
-        changeVote(userId, VoteType.UPVOTE, 1);
+        this.addVote(userId, VoteType.UPVOTE);
     }
 
     @Override
     public void removeUpvote(String userId) {
-        changeVote(userId, VoteType.UPVOTE, -1);
+        this.removeVote(userId, VoteType.UPVOTE);
     }
 
     @Override
     public void addDownvote(String userId) {
-        changeVote(userId, VoteType.DOWNVOTE, 1);
+        this.addVote(userId, VoteType.DOWNVOTE);
     }
 
     @Override
     public void removeDownvote(String userId) {
-        changeVote(userId, VoteType.DOWNVOTE, -1);
+        this.removeVote(userId, VoteType.DOWNVOTE);
     }
 
     @Override
     public Integer getTotalUpvotes() {
-        return upvotes;
+        return this.upvotes;
     }
 
     @Override
     public Integer getTotalDownvotes() {
-        return downvotes;
+        return this.downvotes;
     }
 
     @Override
     public void addComment(@NotNull Comment comment) {
-        replies.add(comment);
+        this.replies.add(comment);
     }
 
     @Override
     public Integer getTotalComments() {
-        return replies.size();
+        return this.replies.size();
     }
 
     @Override
@@ -111,7 +111,11 @@ public abstract class Comment implements Votable, Commentable, Reportable, TimeM
     }
 
     public String getContent() {
-        return content;
+        return this.content;
+    }
+
+    public List<Comment> getReplies() {
+        return this.replies;
     }
 
     public void editComment(@NotNull String content) {
@@ -120,30 +124,40 @@ public abstract class Comment implements Votable, Commentable, Reportable, TimeM
     }
 
     public void deleteComment() {
-        deleted = true;
+        this.deleted = true;
     }
 
-    private void changeVote(String userId, VoteType voteType, Integer changeBy) {
-        if (Math.abs(changeBy) != 1) {
-            throw new IllegalArgumentException("Trying to change vote by more than 1 not allowed");
-        }
+    private void addVote(String userId, VoteType voteType) {
+        VoteType existing = this.userVoteMap.getOrDefault(userId, null);
 
-        VoteType existing = userVoteMap.getOrDefault(userId, null);
         if (null == existing) {
-            userVoteMap.put(userId, voteType);
+            this.userVoteMap.put(userId, voteType);
             if (voteType == VoteType.UPVOTE) {
-                upvotes += changeBy;
+                upvotes++;
             }else {
-                downvotes += changeBy;
+                downvotes++;
             }
         } else if (existing != voteType) {
-            userVoteMap.replace(userId, voteType);
+            this.userVoteMap.replace(userId, voteType);
             if (voteType == VoteType.UPVOTE) {
-                upvotes += changeBy;
-                downvotes -= changeBy;
+                upvotes++;
+                downvotes--;
             } else {
-                downvotes += changeBy;
-                upvotes -= changeBy;
+                downvotes++;
+                upvotes--;
+            }
+        }
+    }
+
+    private void removeVote(String userId, VoteType voteType) {
+        VoteType existing = this.userVoteMap.getOrDefault(userId, null);
+
+        if (existing == voteType) {
+            this.userVoteMap.remove(userId);
+            if (voteType == VoteType.UPVOTE) {
+                upvotes--;
+            } else {
+                downvotes--;
             }
         }
     }
